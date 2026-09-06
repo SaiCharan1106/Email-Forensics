@@ -345,6 +345,10 @@ export function generateInvestigativePdf(analysis, options = {}) {
           <span class="label">RFC 822 Message-ID</span>
           <span class="val code-val">${analysis.messageId}</span>
         </div>
+        <div class="meta-item">
+          <span class="label">Detected Language Profile</span>
+          <span class="val">${analysis.detectedLanguage?.primaryFlag || "🌐"} ${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"} (${analysis.detectedLanguage?.script || "Latin"} Script)${analysis.detectedLanguage?.isMultilingual ? ` · Multilingual: ${analysis.detectedLanguage.summary}` : ""}</span>
+        </div>
       </div>
     </div>
 
@@ -412,6 +416,8 @@ export function generateInvestigativePdf(analysis, options = {}) {
       <div class="section-title">3. NLP Linguistic & Social Engineering Analysis</div>
       <div class="callout-box">
         <p style="margin-bottom: 6px;"><strong>Primary Linguistic Assessment:</strong> ${analysis.nlpAudit?.primaryClassification} (Confidence: ${analysis.nlpAudit?.classificationConfidence || 85}%)</p>
+        <p style="margin-bottom: 6px;"><strong>Linguistic & Script Identification:</strong> ${analysis.detectedLanguage?.primaryFlag || "🌐"} ${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}${analysis.detectedLanguage?.primaryNative && analysis.detectedLanguage?.primaryNative !== analysis.detectedLanguage?.primary ? ` (${analysis.detectedLanguage.primaryNative})` : ""} · Script: ${analysis.detectedLanguage?.script || "Latin"} · Confidence: ${analysis.detectedLanguage?.confidence || 95}% ${analysis.detectedLanguage?.isMultilingual ? `· Polyglot: ${analysis.detectedLanguage?.summary}` : ""}</p>
+        ${analysis.detectedLanguage?.threatContext ? `<p style="margin-bottom: 6px; font-size: 9pt; color: #334155;"><strong>Regional Threat Context:</strong> ${analysis.detectedLanguage.threatContext}</p>` : ""}
         <p style="margin-bottom: 6px;"><strong>Urgency & Psychological Coercion Score:</strong> ${analysis.nlpAudit?.urgencyScore || 0} / 40 points</p>
         ${analysis.nlpAudit?.detectedBecPatterns?.length > 0 ? `
           <p style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">Detected BEC (Business Email Compromise) Attack Vectors:</p>

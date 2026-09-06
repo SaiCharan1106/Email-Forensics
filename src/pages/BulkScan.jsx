@@ -75,9 +75,9 @@ export default function BulkScan({ onSelectEmail, setActivePage, settings }) {
 
   const exportCSV = () => {
     if (results.length === 0) return;
-    const header = "File Name,Subject,From,Risk Score,Risk Level,Phishing,Suspicious Links,SPF,DKIM,DMARC,Attachments\n";
+    const header = "File Name,Subject,From,Language,Risk Score,Risk Level,Phishing,Suspicious Links,SPF,DKIM,DMARC,Attachments\n";
     const rows = results.map((r) =>
-      `"${r.fileName}","${(r.subject || "").replace(/"/g, '""')}","${r.from}",${r.riskScore},"${r.riskLevel}",${r.phishingDetected},${r.suspiciousLinks || 0},"${r.spf || "N/A"}","${r.dkim || "N/A"}","${r.dmarc || "N/A"}",${r.attachmentCount || 0}`
+      `"${r.fileName}","${(r.subject || "").replace(/"/g, '""')}","${r.from}","${r.detectedLanguage?.primary || r.detectedLanguage || "English"}",${r.riskScore},"${r.riskLevel}",${r.phishingDetected},${r.suspiciousLinks || 0},"${r.spf || "N/A"}","${r.dkim || "N/A"}","${r.dmarc || "N/A"}",${r.attachmentCount || 0}`
     ).join("\n");
 
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
@@ -234,6 +234,7 @@ export default function BulkScan({ onSelectEmail, setActivePage, settings }) {
                     <th style={{ padding: "10px 8px" }}>File Name</th>
                     <th style={{ padding: "10px 8px" }}>Subject</th>
                     <th style={{ padding: "10px 8px" }}>Sender</th>
+                    <th style={{ padding: "10px 8px" }}>Language</th>
                     <th style={{ padding: "10px 8px" }}>Threat Score</th>
                     <th style={{ padding: "10px 8px" }}>Auth (SPF/DKIM)</th>
                     <th style={{ padding: "10px 8px" }}>Action</th>
@@ -245,6 +246,9 @@ export default function BulkScan({ onSelectEmail, setActivePage, settings }) {
                       <td style={{ padding: "10px 8px", fontWeight: "600" }}>{res.fileName}</td>
                       <td style={{ padding: "10px 8px", color: "#334155" }}>{res.subject}</td>
                       <td style={{ padding: "10px 8px", color: "#64748b" }}>{res.from}</td>
+                      <td style={{ padding: "10px 8px", color: "#0d9488", fontWeight: "600", whiteSpace: "nowrap" }}>
+                        {res.detectedLanguage?.primaryFlag || "🌐"} {res.detectedLanguage?.primary || res.detectedLanguage || "EN"}
+                      </td>
                       <td style={{ padding: "10px 8px" }}>
                         <span
                           style={{

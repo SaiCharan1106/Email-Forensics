@@ -211,6 +211,10 @@ export default function Dashboard({
                 <SummaryRow label="To" value={analysis.to} />
                 <SummaryRow label="Subject" value={analysis.subject} />
                 <SummaryRow label="Received" value={analysis.date} />
+                <SummaryRow
+                  label="Language"
+                  value={`${analysis.detectedLanguage?.primaryFlag || "🌐"} ${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"} (${analysis.detectedLanguage?.confidence || 95}% conf.)${analysis.detectedLanguage?.isMultilingual ? " · Polyglot" : ""}`}
+                />
               </div>
 
               <div className="auth-grid">
@@ -261,6 +265,11 @@ export default function Dashboard({
                   danger
                 />
               )}
+              <Indicator
+                label="Language"
+                value={`${analysis.detectedLanguage?.primaryFlag || "🌐"} ${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}${analysis.detectedLanguage?.isMultilingual ? " (Multi)" : ""}`}
+                warning={analysis.detectedLanguage?.isMultilingual || analysis.detectedLanguage?.isHinglish}
+              />
               <Indicator
                 label="Urgency triggers"
                 value={

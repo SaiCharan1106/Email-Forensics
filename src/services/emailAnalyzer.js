@@ -1,5 +1,5 @@
 import PostalMime from "postal-mime";
-import { detectLanguage } from "./languageService";
+import { detectLanguage } from "./languageService.js";
 import { analyzeLinguisticsAndBEC } from "./nlpService";
 import { traceReceivedHops, auditHeaderProtocolAlignment } from "./headerTracer";
 import { determineAttribution, buildCorrelationGraph } from "./attributionService";
@@ -116,7 +116,11 @@ export async function analyzeEmlFile(file, customSettings = {}) {
   const bodyText = parsedEmail.text || "";
   const bodyHtml = parsedEmail.html || "";
   const combinedText = [subject, bodyText, bodyHtml].join(" ").toLowerCase();
-  const detectedLanguage = detectLanguage([subject, bodyText].join(" "));
+
+  const plainFromHtml = bodyHtml ? bodyHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : "";
+  const effectiveBody = (bodyText || plainFromHtml || "").trim();
+  const languageAnalysisText = [subject, effectiveBody].filter(Boolean).join("\n\n");
+  const detectedLanguage = detectLanguage(languageAnalysisText);
 
   // 1. NLP & Linguistic Analysis (Urgency Cues & Social Engineering)
   const nlpAudit = analyzeLinguisticsAndBEC(subject, bodyText, headers);
@@ -388,6 +392,12 @@ export async function analyzeEmlFile(file, customSettings = {}) {
     { step: "Live Domain Intelligence & WHOIS Fingerprinting", status: "Completed", detail: domainIntel?.hostingProvider || (dnsInfo?.hasMxRecords ? "Domain verified" : "Unverified"), time: timestamp },
     { step: "Identity Attribution & Correlation Topology", status: "Completed", detail: attribution.infrastructureType, time: timestamp },
     { step: "Risk Finalization & Tamper-Evident Ledger Entry", status: "Completed", detail: `Score: ${riskScore}/100 (${riskLevel})`, time: timestamp },
+    {
+      step: "Multi-Language Forensic & Script Identification",
+      status: "Completed",
+      detail: `Primary: ${detectedLanguage.primary || detectedLanguage} (${detectedLanguage.confidence || 95}% conf.)${detectedLanguage.isMultilingual ? ` · Multilingual: ${detectedLanguage.summary}` : ` · Script: ${detectedLanguage.script || "Latin"}`}`,
+      time: timestamp,
+    },
   ];
 
   return {

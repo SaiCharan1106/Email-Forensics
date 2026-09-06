@@ -75,6 +75,7 @@ DMARC Policy Mode : ${analysis.dmarc}
 --------------------------------------------------------------------------------
 3. NLP SOCIAL ENGINEERING & BEC (BUSINESS EMAIL COMPROMISE) AUDIT
 --------------------------------------------------------------------------------
+Linguistic Profile  : ${analysis.detectedLanguage?.primaryFlag || "🌐"} ${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"} (${analysis.detectedLanguage?.script || "Latin"} Script) · Confidence: ${analysis.detectedLanguage?.confidence || 95}%${analysis.detectedLanguage?.isMultilingual ? ` · Polyglot: ${analysis.detectedLanguage?.summary}` : ""}
 Urgency Score     : ${analysis.nlpAudit?.urgencyScore || 0} / 40
 BEC Severity      : ${analysis.nlpAudit?.highestBecSeverity || "NONE"}
 Detected BEC Markers:
@@ -419,6 +420,9 @@ END OF FORENSIC INCIDENT REPORT - DIGITAL CHAIN OF CUSTODY CERTIFIED
               <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", fontSize: "13px", color: "#334155" }}>
                 <p style={{ margin: "0 0 8px" }}>
                   <strong>Attributed Infrastructure:</strong> {analysis.attribution?.infrastructureType} (Campaign: {analysis.attribution?.campaignTag || "Isolated"})
+                </p>
+                <p style={{ margin: "0 0 8px" }}>
+                  <strong>Linguistic & Script Profile:</strong> {analysis.detectedLanguage?.primaryFlag || "🌐"} <strong>{analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}</strong> ({analysis.detectedLanguage?.script || "Latin"} Script) · Confidence: {analysis.detectedLanguage?.confidence || 95}%{analysis.detectedLanguage?.isMultilingual ? ` · Polyglot: ${analysis.detectedLanguage?.summary}` : ""}
                 </p>
                 <p style={{ margin: "0 0 8px" }}>
                   <strong>Assessment Summary:</strong> {analysis.attribution?.attributionSummary}

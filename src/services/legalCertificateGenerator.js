@@ -40,6 +40,7 @@ Header Sender (From) : ${fromVal}
 Header Recipient(To) : ${toVal}
 Subject Line         : ${analysis.subject}
 Message Timestamp    : ${analysis.date}
+Linguistic Profile   : ${analysis.detectedLanguage?.primaryFlag || "🌐"} ${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"} (${analysis.detectedLanguage?.script || "Latin"} Script)${analysis.detectedLanguage?.isMultilingual ? ` [Polyglot: ${analysis.detectedLanguage.summary}]` : ""}
 
 --------------------------------------------------------------------------------
 2. CRYPTOGRAPHIC INTEGRITY & BITSTREAM FINGERPRINT
@@ -316,6 +317,10 @@ export function generateSection65BCertificatePdf(analysis, options = {}) {
       <tr>
         <th>Transmission Timestamp</th>
         <td>${analysis.date}</td>
+      </tr>
+      <tr>
+        <th>Linguistic & Script Profile</th>
+        <td>${analysis.detectedLanguage?.primaryFlag || "🌐"} <strong>${analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}</strong> (${analysis.detectedLanguage?.script || "Latin"} Script) · Confidence: ${analysis.detectedLanguage?.confidence || 95}%${analysis.detectedLanguage?.isMultilingual ? ` [Polyglot: ${analysis.detectedLanguage.summary}]` : ""}</td>
       </tr>
       <tr>
         <th>Authentication Telemetry</th>

@@ -22,6 +22,7 @@ import {
   Download,
   MapPin,
   Search,
+  Languages,
 } from "lucide-react";
 import { analyzeEmlFile } from "../services/emailAnalyzer";
 import { maskSensitiveText } from "../services/privacyService";
@@ -480,8 +481,8 @@ export default function AnalyzeEmail({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "8px",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: "6px",
                   fontSize: "11px",
                   textAlign: "center",
                 }}
@@ -505,6 +506,23 @@ export default function AnalyzeEmail({
                   <span style={{ color: "#64748b", display: "block" }}>Files</span>
                   <strong style={{ color: analysis.dangerousAttachments?.length > 0 ? "#dc2626" : "#334155" }}>
                     {analysis.attachmentCount} Att.
+                  </strong>
+                </div>
+
+                <div
+                  style={{
+                    padding: "8px 4px",
+                    borderRadius: "6px",
+                    background: analysis.detectedLanguage?.isMultilingual ? "#f0fdfa" : "#f8fafc",
+                    border: analysis.detectedLanguage?.isMultilingual ? "1px solid #99f6e4" : "1px solid #e2e8f0",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setActiveTab("language")}
+                  title={`Language Profile: ${analysis.detectedLanguage?.summary || analysis.detectedLanguage || "English"} (Click to inspect)`}
+                >
+                  <span style={{ color: "#64748b", display: "block" }}>Lang</span>
+                  <strong style={{ color: "#0f766e", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {analysis.detectedLanguage?.primaryFlag || "🌐"} {analysis.detectedLanguage?.primary || analysis.detectedLanguage || "EN"}
                   </strong>
                 </div>
               </div>
@@ -531,6 +549,7 @@ export default function AnalyzeEmail({
               { id: "overview", label: "Executive Summary", icon: FileText },
               { id: "formal_report", label: "Investigation Report", icon: FileText },
               { id: "nlp", label: `NLP & BEC Cues (${analysis.nlpAudit?.detectedTriggers?.length || 0})`, icon: Zap },
+              { id: "language", label: `Language & Scripts (${analysis.detectedLanguage?.primary || "Detect"})`, icon: Languages },
               { id: "auth", label: "Protocol & Alignment", icon: ShieldCheck },
               { id: "route", label: `Mail Hop Trace (${analysis.hopTrace?.totalHops || 0})`, icon: Network },
               { id: "origin", label: "Origin Radar & Geo", icon: Globe2 },
@@ -622,6 +641,22 @@ export default function AnalyzeEmail({
                   <span>Attribution Classification</span>
                   <strong>{analysis.attribution?.infrastructureType || "Unknown"}</strong>
                 </div>
+
+                <div>
+                  <span>Linguistic Profile</span>
+                  <strong style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>{analysis.detectedLanguage?.primaryFlag || "🌐"}</span>
+                    <span>{analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}</span>
+                    {analysis.detectedLanguage?.primaryNative && analysis.detectedLanguage?.primaryNative !== analysis.detectedLanguage?.primary && (
+                      <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "normal" }}>({analysis.detectedLanguage.primaryNative})</span>
+                    )}
+                    {analysis.detectedLanguage?.isMultilingual && (
+                      <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "10px", background: "#ccfbf1", color: "#0f766e", fontWeight: "700" }}>
+                        Multi-Language
+                      </span>
+                    )}
+                  </strong>
+                </div>
               </div>
 
               {/* HIGHLIGHTED RISK FACTORS SUMMARY */}
@@ -670,6 +705,17 @@ export default function AnalyzeEmail({
                       {analysis.domainIntel?.typosquattingDetected
                         ? `Typosquatting alert: Deceptively impersonates brand '${analysis.domainIntel.typosquattingTarget}'.`
                         : `Host: ${analysis.domainIntel?.hostingProvider || "Standard DNS"}`}
+                    </p>
+                  </div>
+
+                  <div style={{ background: "#fff", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "600" }}>Linguistic & Regional Origin:</span>
+                    <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#334155" }}>
+                      <strong>{analysis.detectedLanguage?.primaryFlag || "🌐"} {analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}</strong>
+                      {analysis.detectedLanguage?.isMultilingual ? ` (${analysis.detectedLanguage.summary})` : ` · Script: ${analysis.detectedLanguage?.script || "Latin"}`}
+                      <span style={{ display: "block", fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+                        {analysis.detectedLanguage?.primaryRegion || "Standard International Profile"}
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -971,6 +1017,13 @@ export default function AnalyzeEmail({
                         {analysis.messageId}
                       </strong>
                     </div>
+                    <div>
+                      <span style={{ color: "#64748b", fontWeight: "600", display: "block" }}>Linguistic Profile & Script:</span>
+                      <strong style={{ color: "#0f172a" }}>
+                        {analysis.detectedLanguage?.primaryFlag || "🌐"} {analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"} ({analysis.detectedLanguage?.script || "Latin"} Script)
+                        {analysis.detectedLanguage?.isMultilingual && ` · Multilingual: ${analysis.detectedLanguage?.summary}`}
+                      </strong>
+                    </div>
                   </div>
                 </div>
 
@@ -1242,6 +1295,133 @@ export default function AnalyzeEmail({
                 </p>
               </div>
 
+              {/* MULTI-LANGUAGE FORENSIC IDENTIFICATION BANNER */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%)",
+                  border: "1px solid #99f6e4",
+                  borderRadius: "10px",
+                  padding: "16px 18px",
+                  marginBottom: "20px",
+                  boxShadow: "0 2px 8px rgba(13, 148, 136, 0.06)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div
+                      style={{
+                        width: "42px",
+                        height: "42px",
+                        borderRadius: "10px",
+                        background: "#0d9488",
+                        color: "#fff",
+                        display: "grid",
+                        placeItems: "center",
+                        fontSize: "20px",
+                        boxShadow: "0 4px 10px rgba(13, 148, 136, 0.25)",
+                      }}
+                    >
+                      <Languages size={22} />
+                    </div>
+
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "11px", fontWeight: "800", color: "#0f766e", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Multi-Language Forensic Analysis
+                        </span>
+                        {analysis.detectedLanguage?.isMultilingual && (
+                          <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "12px", background: "#0d9488", color: "#fff" }}>
+                            POLYGLOT / MULTI-SCRIPT
+                          </span>
+                        )}
+                        {analysis.detectedLanguage?.isHinglish && (
+                          <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "12px", background: "#f59e0b", color: "#fff" }}>
+                            HINGLISH / ROMANIZED
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 style={{ margin: "3px 0 0", fontSize: "17px", color: "#134e4a", fontWeight: "800" }}>
+                        {analysis.detectedLanguage?.primaryFlag || "🌐"} {analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}
+                        {analysis.detectedLanguage?.primaryNative && analysis.detectedLanguage.primaryNative !== analysis.detectedLanguage.primary && (
+                          <span style={{ fontSize: "14px", color: "#0d9488", marginLeft: "6px", fontWeight: "600" }}>
+                            ({analysis.detectedLanguage.primaryNative})
+                          </span>
+                        )}
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "500", marginLeft: "8px" }}>
+                          · Script: {analysis.detectedLanguage?.script || "Latin"} ({analysis.detectedLanguage?.confidence || 95}% Confidence)
+                        </span>
+                      </h4>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab("language")}
+                    style={{
+                      background: "#0d9488",
+                      color: "#fff",
+                      border: 0,
+                      borderRadius: "6px",
+                      padding: "6px 12px",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    View Script Breakdown →
+                  </button>
+                </div>
+
+                {/* MULTI-LANGUAGE DISTRIBUTION BAR */}
+                {analysis.detectedLanguage?.languages?.length > 0 && (
+                  <div style={{ marginTop: "14px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#0f766e", fontWeight: "700", marginBottom: "4px" }}>
+                      <span>Linguistic Distribution: {analysis.detectedLanguage.summary}</span>
+                      <span>{analysis.detectedLanguage.totalCharactersAnalyzed || 0} characters profiled</span>
+                    </div>
+
+                    <div style={{ height: "10px", borderRadius: "6px", overflow: "hidden", display: "flex", background: "#e2e8f0" }}>
+                      {analysis.detectedLanguage.languages.map((l, idx) => {
+                        const colors = ["#0d9488", "#6366f1", "#f59e0b", "#ec4899", "#8b5cf6", "#10b981"];
+                        return (
+                          <div
+                            key={idx}
+                            style={{
+                              width: `${l.percentage}%`,
+                              background: colors[idx % colors.length],
+                              height: "100%",
+                            }}
+                            title={`${l.language}: ${l.percentage}% (${l.count} chars)`}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
+                      {analysis.detectedLanguage.languages.map((l, idx) => {
+                        const colors = ["#0d9488", "#6366f1", "#f59e0b", "#ec4899", "#8b5cf6", "#10b981"];
+                        return (
+                          <span key={idx} style={{ fontSize: "11px", color: "#334155", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: colors[idx % colors.length] }} />
+                            <strong>{l.flag} {l.language}</strong>: {l.percentage}% ({l.count} chars)
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* THREAT TACTICAL NOTE */}
+                {analysis.detectedLanguage?.threatContext && (
+                  <div style={{ marginTop: "12px", padding: "8px 12px", background: "rgba(255,255,255,0.7)", borderRadius: "6px", fontSize: "12px", color: "#134e4a", borderLeft: "3px solid #0d9488" }}>
+                    <strong>Forensic Linguistic Threat Finding:</strong> {analysis.detectedLanguage.threatContext}
+                  </div>
+                )}
+              </div>
+
               {/* BEC PATTERNS DETECTED */}
               <div style={{ marginBottom: "20px" }}>
                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569", textTransform: "uppercase" }}>
@@ -1318,6 +1498,314 @@ export default function AnalyzeEmail({
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: MULTI-LANGUAGE & SCRIPT FORENSICS */}
+          {activeTab === "language" && (
+            <div>
+              <div style={{ marginBottom: "18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "800",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      background: "#0d9488",
+                      color: "#fff",
+                    }}
+                  >
+                    Linguistic Triage Engine
+                  </span>
+                  <span style={{ fontSize: "12px", color: "#64748b" }}>
+                    Unicode Standard & ISO 639-1 Compliant
+                  </span>
+                </div>
+                <h3 style={{ margin: "2px 0 4px", fontSize: "18px", color: "#0f172a" }}>
+                  Multi-Language & Script Forensics Audit
+                </h3>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+                  Automated detection of primary and secondary languages, regional Indian scripts, polyglot evasion tactics, and vernacular social engineering.
+                </p>
+              </div>
+
+              {/* TOP METRICS SUMMARY CARDS */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: "14px",
+                  marginBottom: "20px",
+                }}
+              >
+                {/* PRIMARY LANGUAGE CARD */}
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)",
+                    border: "1px solid #99f6e4",
+                    borderRadius: "10px",
+                    padding: "16px",
+                  }}
+                >
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#0f766e", textTransform: "uppercase" }}>
+                    Primary Identified Language
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
+                    <span style={{ fontSize: "32px", lineHeight: 1 }}>
+                      {analysis.detectedLanguage?.primaryFlag || "🌐"}
+                    </span>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: "18px", color: "#134e4a", fontWeight: "800" }}>
+                        {analysis.detectedLanguage?.primary || analysis.detectedLanguage || "English"}
+                      </h4>
+                      {analysis.detectedLanguage?.primaryNative && analysis.detectedLanguage.primaryNative !== analysis.detectedLanguage.primary && (
+                        <span style={{ fontSize: "13px", color: "#0d9488", fontWeight: "700" }}>
+                          {analysis.detectedLanguage.primaryNative} · [{analysis.detectedLanguage.primaryCode?.toUpperCase()}]
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* SCRIPT FAMILY CARD */}
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    padding: "16px",
+                  }}
+                >
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>
+                    Script Family & Characters
+                  </span>
+                  <div style={{ marginTop: "8px" }}>
+                    <strong style={{ fontSize: "18px", color: "#0f172a", display: "block" }}>
+                      {analysis.detectedLanguage?.script || "Latin / Standard"}
+                    </strong>
+                    <span style={{ fontSize: "12px", color: "#64748b", marginTop: "2px", display: "block" }}>
+                      {analysis.detectedLanguage?.totalCharactersAnalyzed || 0} linguistic characters profiled
+                    </span>
+                  </div>
+                </div>
+
+                {/* CLASSIFICATION & CONFIDENCE */}
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    padding: "16px",
+                  }}
+                >
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>
+                    Linguistic Mode & Confidence
+                  </span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginTop: "8px" }}>
+                    <strong style={{ fontSize: "24px", color: "#0f766e" }}>
+                      {analysis.detectedLanguage?.confidence || 95}%
+                    </strong>
+                    <span
+                      style={{
+                        marginLeft: "auto",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        background: analysis.detectedLanguage?.isMultilingual ? "#fef3c7" : "#dcfce7",
+                        color: analysis.detectedLanguage?.isMultilingual ? "#b45309" : "#15803d",
+                      }}
+                    >
+                      {analysis.detectedLanguage?.isMultilingual ? "Polyglot / Mixed" : "Monolingual"}
+                    </span>
+                  </div>
+                  {analysis.detectedLanguage?.isHinglish && (
+                    <span style={{ display: "inline-block", marginTop: "4px", fontSize: "11px", color: "#b45309", fontWeight: "600" }}>
+                      ⚡ Romanized Indic (Hinglish) Detected
+                    </span>
+                  )}
+                </div>
+
+                {/* REGIONAL JURISDICTION / TARGETING */}
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    padding: "16px",
+                  }}
+                >
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>
+                    Regional Threat Alignment
+                  </span>
+                  <div style={{ marginTop: "8px" }}>
+                    <strong style={{ fontSize: "14px", color: "#1e293b", display: "block" }}>
+                      {analysis.detectedLanguage?.primaryRegion || "International / Global Profile"}
+                    </strong>
+                    <span style={{ fontSize: "11px", color: "#64748b", marginTop: "2px", display: "block" }}>
+                      Target Victim Demographic Profile
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* POLYGLOT DISTRIBUTION SECTION */}
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  padding: "18px 20px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <h4 style={{ margin: 0, fontSize: "14px", color: "#0f172a", fontWeight: "700" }}>
+                    Polyglot Character Distribution
+                  </h4>
+                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "600" }}>
+                    Summary: {analysis.detectedLanguage?.summary || analysis.detectedLanguage || "English"}
+                  </span>
+                </div>
+
+                {/* HORIZONTAL PROPORTIONAL PROGRESS BAR */}
+                <div style={{ height: "14px", borderRadius: "8px", overflow: "hidden", display: "flex", background: "#f1f5f9", marginBottom: "16px" }}>
+                  {(analysis.detectedLanguage?.languages || []).map((lang, idx) => {
+                    const colors = ["#0d9488", "#6366f1", "#f59e0b", "#ec4899", "#8b5cf6", "#10b981"];
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          width: `${lang.percentage}%`,
+                          background: colors[idx % colors.length],
+                          height: "100%",
+                          transition: "width 0.3s ease",
+                        }}
+                        title={`${lang.language}: ${lang.percentage}% (${lang.count} chars)`}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* DETAILED LANGUAGE TABLE */}
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", textAlign: "left", color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "8px 12px" }}>Language</th>
+                      <th style={{ padding: "8px 12px" }}>ISO Code</th>
+                      <th style={{ padding: "8px 12px" }}>Native Script</th>
+                      <th style={{ padding: "8px 12px" }}>Script Family</th>
+                      <th style={{ padding: "8px 12px" }}>Volume</th>
+                      <th style={{ padding: "8px 12px" }}>Distribution</th>
+                      <th style={{ padding: "8px 12px" }}>Regional Jurisdiction</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(analysis.detectedLanguage?.languages || []).map((lang, idx) => {
+                      const colors = ["#0d9488", "#6366f1", "#f59e0b", "#ec4899", "#8b5cf6", "#10b981"];
+                      const isPrim = idx === 0;
+                      return (
+                        <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9", background: isPrim ? "rgba(13, 148, 136, 0.03)" : "transparent" }}>
+                          <td style={{ padding: "10px 12px", fontWeight: isPrim ? "700" : "500", color: "#0f172a" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: colors[idx % colors.length] }} />
+                              <span>{lang.flag}</span>
+                              <span>{lang.language}</span>
+                              {isPrim && (
+                                <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "10px", background: "#ccfbf1", color: "#0f766e", fontWeight: "700" }}>
+                                  Primary
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                          <td style={{ padding: "10px 12px", fontFamily: "monospace", color: "#475569" }}>
+                            {lang.code || "en"}
+                          </td>
+                          <td style={{ padding: "10px 12px", fontWeight: "600", color: "#0d9488" }}>
+                            {lang.native || lang.language}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#475569" }}>
+                            {lang.script || "Latin"}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#475569" }}>
+                            {lang.count} chars
+                          </td>
+                          <td style={{ padding: "10px 12px", fontWeight: "700", color: colors[idx % colors.length] }}>
+                            {lang.percentage}%
+                          </td>
+                          <td style={{ padding: "10px 12px", color: "#64748b" }}>
+                            {lang.region || "International"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* FORENSIC THREAT CONTEXT & DECEPTION ANALYSIS */}
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  padding: "16px 20px",
+                  marginBottom: "20px",
+                }}
+              >
+                <h4 style={{ margin: "0 0 8px", fontSize: "14px", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <ShieldCheck size={16} style={{ color: "#0d9488" }} />
+                  SOC Threat Intelligence: Vernacular Deception & Filter Evasion
+                </h4>
+                <p style={{ margin: 0, fontSize: "13px", color: "#334155", lineHeight: "1.6" }}>
+                  {analysis.detectedLanguage?.threatContext ||
+                    "Standard linguistic profile. Attackers frequently use regional languages or bilingual templates to bypass traditional secure email gateway (SEG) keyword rules and exploit victim trust in native communications."}
+                </p>
+                {analysis.detectedLanguage?.isMultilingual && (
+                  <div style={{ marginTop: "10px", padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", fontSize: "12px", color: "#92400e" }}>
+                    <strong>Cross-Lingual Lure Vector:</strong> This message contains content in multiple languages. Attackers commonly format the email frame, headers, or disclaimer in English while embedding malicious requests (e.g. banking credentials, OTPs, or urgent payment notices) in regional Indian scripts to evade legacy English-trained spam models.
+                  </div>
+                )}
+              </div>
+
+              {/* TEXT EXTRACT PREVIEW */}
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  padding: "16px 20px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#475569", textTransform: "uppercase" }}>
+                    Ingested Email Body Text Sample (Subject + Body)
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#64748b" }}>
+                    Cleaned & Sanitized for Linguistic Evaluation
+                  </span>
+                </div>
+                <div
+                  style={{
+                    background: "#0f172a",
+                    color: "#f8fafc",
+                    padding: "14px 16px",
+                    borderRadius: "8px",
+                    fontFamily: "monospace",
+                    fontSize: "12px",
+                    lineHeight: "1.6",
+                    maxHeight: "220px",
+                    overflowY: "auto",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {analysis.bodyPreview || "(No body content parsed from email)"}
+                </div>
               </div>
             </div>
           )}
