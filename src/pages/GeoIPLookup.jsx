@@ -5,50 +5,66 @@ import {
   MapPin,
   Radio,
   Compass,
+  ExternalLink,
+  ShieldCheck,
+  Activity,
 } from "lucide-react";
 import ModulePage from "../components/ModulePage";
 import Globe3D from "../components/Globe3D";
-import { lookupIP } from "../services/geoService";
+import { lookupGeoIP, normalizeIP } from "../services/geoIpService";
 
 export default function GeoIPLookup({ analysis }) {
-  const extractedIPs = useMemo(() => analysis?.extractedIPs || [], [analysis?.extractedIPs]);
+  const extractedIPs = useMemo(
+    () => (analysis?.extractedIPs || []).map((ip) => normalizeIP(ip)).filter(Boolean),
+    [analysis?.extractedIPs]
+  );
   const [ipInput, setIpInput] = useState(extractedIPs[0] || "");
   const [loading, setLoading] = useState(false);
   const [geoData, setGeoData] = useState(null);
   const [error, setError] = useState(null);
   const [recentLookups, setRecentLookups] = useState([]);
 
-  const handleLookup = useCallback(async (ipToQuery) => {
-    const targetIp = (ipToQuery || ipInput || extractedIPs[0] || "").trim();
-    if (!targetIp) {
-      setError("Please enter a valid IP address.");
-      return;
-    }
+  const handleLookup = useCallback(
+    async (ipToQuery) => {
+      const rawIp = (ipToQuery || ipInput || extractedIPs[0] || "").trim();
+      const targetIp = normalizeIP(rawIp);
+      if (!targetIp) {
+        setError("Please enter a valid IPv4 or IPv6 address.");
+        return;
+      }
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const data = await lookupIP(targetIp);
-      setGeoData(data);
-      setRecentLookups((prev) => {
-        const filtered = prev.filter((item) => item.ip !== data.ip);
-        return [data, ...filtered].slice(0, 5);
-      });
-    } catch (err) {
-      console.error("GeoIP lookup failed:", err);
-      setError("Unable to resolve GeoIP location for this address.");
-    } finally {
-      setLoading(false);
-    }
-  }, [ipInput, extractedIPs]);
+      try {
+        const data = await lookupGeoIP(targetIp);
+        if (data) {
+          setGeoData(data);
+          setRecentLookups((prev) => {
+            const filtered = prev.filter((item) => item.ip !== data.ip);
+            return [data, ...filtered].slice(0, 5);
+          });
+        } else {
+          setError("Unable to resolve GeoIP location for this address. Please verify the IP.");
+        }
+      } catch (err) {
+        console.error("GeoIP lookup failed:", err);
+        setError("Unable to resolve GeoIP location for this address. Please check your internet connection.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [ipInput, extractedIPs]
+  );
 
   useEffect(() => {
     let isMounted = true;
     if (extractedIPs.length > 0) {
-      lookupIP(extractedIPs[0])
+      const initialIp = extractedIPs[0];
+      setIpInput(initialIp);
+      lookupGeoIP(initialIp)
         .then((data) => {
-          if (isMounted) {
+          if (isMounted && data) {
             setGeoData(data);
             setRecentLookups((prev) => {
               const filtered = prev.filter((item) => item.ip !== data.ip);
@@ -86,7 +102,7 @@ export default function GeoIPLookup({ analysis }) {
           >
             <input
               type="text"
-              placeholder="e.g. 198.51.100.24 or 8.8.8.8"
+              placeholder="e.g. 193.35.16.214 or 8.8.8.8"
               value={ipInput}
               onChange={(e) => setIpInput(e.target.value)}
               style={{
@@ -105,7 +121,17 @@ export default function GeoIPLookup({ analysis }) {
           </form>
 
           {error && (
-            <div style={{ marginTop: "12px", color: "#dc2626", fontSize: "13px" }}>
+            <div
+              style={{
+                marginTop: "12px",
+                color: "#dc2626",
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                padding: "10px 14px",
+                borderRadius: "6px",
+                fontSize: "13px",
+              }}
+            >
               {error}
             </div>
           )}
@@ -161,7 +187,9 @@ export default function GeoIPLookup({ analysis }) {
                   }}
                 >
                   <strong style={{ fontFamily: "monospace" }}>{item.ip}</strong>
-                  <span style={{ color: "#64748b" }}>{item.city}, {item.country_code}</span>
+                  <span style={{ color: "#64748b" }}>
+                    {item.city}, {item.country_code}
+                  </span>
                 </div>
               ))}
             </div>
@@ -171,7 +199,16 @@ export default function GeoIPLookup({ analysis }) {
 
       {/* 3D WORLD GLOBE SECTION */}
       <div className="panel" style={{ padding: "20px", marginBottom: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "16px",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
           <div>
             <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <Compass size={20} color="#2563eb" /> 3D Earth Geospatial Radar (Cesium / WebGL)
@@ -182,20 +219,39 @@ export default function GeoIPLookup({ analysis }) {
           </div>
 
           {geoData && !geoData.isPrivate && (
-            <span
-              style={{
-                padding: "6px 14px",
-                borderRadius: "20px",
-                background: "#0d2741",
-                border: "1px solid #38bdf8",
-                color: "#38bdf8",
-                fontSize: "12px",
-                fontWeight: "700",
-                fontFamily: "monospace",
-              }}
-            >
-              TARGET: {geoData.ip} ({geoData.latitude}°, {geoData.longitude}°)
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  background: "#0d2741",
+                  border: "1px solid #38bdf8",
+                  color: "#38bdf8",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  fontFamily: "monospace",
+                }}
+              >
+                TARGET: {geoData.ip} ({typeof geoData.latitude === "number" ? geoData.latitude.toFixed(4) : geoData.latitude}°,{" "}
+                {typeof geoData.longitude === "number" ? geoData.longitude.toFixed(4) : geoData.longitude}°)
+              </span>
+
+              {geoData.accuracyStatus && (
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "20px",
+                    background: "#f0fdf4",
+                    border: "1px solid #86efac",
+                    color: "#166534",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                  }}
+                >
+                  {geoData.accuracyStatus}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -206,23 +262,70 @@ export default function GeoIPLookup({ analysis }) {
       {/* GEOIP DETAILS RESULT */}
       {geoData && (
         <div className="panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
             <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <MapPin size={20} /> Geolocation & Network Details: {geoData.ip}
             </h3>
-            <span
+
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <span
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  background: geoData.isPrivate ? "#fef3c7" : "#dcfce7",
+                  color: geoData.isPrivate ? "#b45309" : "#15803d",
+                }}
+              >
+                {geoData.isPrivate ? "Internal / Private IP" : "Public Routable IP"}
+              </span>
+
+              {geoData.googleMapsUrl && (
+                <a
+                  href={geoData.googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="secondary-button"
+                  style={{ padding: "4px 10px", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}
+                >
+                  <ExternalLink size={12} /> Google Maps
+                </a>
+              )}
+            </div>
+          </div>
+
+          {geoData.isPrivate && (
+            <div
               style={{
-                padding: "4px 10px",
-                borderRadius: "6px",
-                fontSize: "12px",
-                fontWeight: "700",
-                background: geoData.isPrivate ? "#fef3c7" : "#dcfce7",
-                color: geoData.isPrivate ? "#b45309" : "#15803d",
+                marginBottom: "16px",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                background: "#fffbeb",
+                border: "1px solid #fde68a",
+                color: "#92400e",
+                fontSize: "13px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
               }}
             >
-              {geoData.isPrivate ? "Internal / Private IP" : "Public Routable IP"}
-            </span>
-          </div>
+              <ShieldCheck size={16} />
+              <span>
+                <strong>RFC 1918 Private Address:</strong> This IP belongs to an internal local area network or loopback
+                interface and cannot be geolocated to a physical global coordinate on the public internet.
+              </span>
+            </div>
+          )}
 
           <div
             style={{
@@ -265,7 +368,8 @@ export default function GeoIPLookup({ analysis }) {
             <div>
               <span style={{ fontSize: "12px", color: "#64748b" }}>Coordinates:</span>
               <strong style={{ display: "block", color: "#1e293b", fontSize: "15px" }}>
-                {geoData.latitude}°, {geoData.longitude}°
+                {typeof geoData.latitude === "number" ? geoData.latitude.toFixed(4) : geoData.latitude}°,{" "}
+                {typeof geoData.longitude === "number" ? geoData.longitude.toFixed(4) : geoData.longitude}°
               </strong>
             </div>
 
@@ -273,6 +377,13 @@ export default function GeoIPLookup({ analysis }) {
               <span style={{ fontSize: "12px", color: "#64748b" }}>Timezone:</span>
               <strong style={{ display: "block", color: "#1e293b", fontSize: "15px" }}>
                 {geoData.timezone}
+              </strong>
+            </div>
+
+            <div>
+              <span style={{ fontSize: "12px", color: "#64748b" }}>Resolution Source:</span>
+              <strong style={{ display: "flex", alignItems: "center", gap: "4px", color: "#2563eb", fontSize: "14px" }}>
+                <Activity size={14} /> {geoData.sourceProvider || "High-Accuracy GeoEngine"}
               </strong>
             </div>
           </div>

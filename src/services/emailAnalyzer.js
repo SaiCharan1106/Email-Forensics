@@ -3,7 +3,7 @@ import { detectLanguage } from "./languageService.js";
 import { analyzeLinguisticsAndBEC } from "./nlpService";
 import { traceReceivedHops, auditHeaderProtocolAlignment } from "./headerTracer";
 import { determineAttribution, buildCorrelationGraph } from "./attributionService";
-import { lookupGeoIP, extractAllForensicIPs } from "./geoIpService";
+import { lookupGeoIP, extractAllForensicIPs, normalizeIP } from "./geoIpService";
 
 /**
  * Computes a SHA-256 hex string from an ArrayBuffer using Web Crypto API.
@@ -79,13 +79,14 @@ const SUSPICIOUS_DOMAIN_PATTERNS = [
 ];
 
 /**
- * Extracts IPv4 addresses from header text or strings.
+ * Extracts IPv4 addresses from header text or strings and normalizes octets (e.g. 09.05.21.51 -> 9.5.21.51).
  */
 export function extractIPAddresses(text) {
   if (!text) return [];
   const ipv4Regex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
   const matches = text.match(ipv4Regex) || [];
-  const uniqueIPs = Array.from(new Set(matches));
+  const normalized = matches.map((ip) => normalizeIP(ip)).filter(Boolean);
+  const uniqueIPs = Array.from(new Set(normalized));
   return uniqueIPs.filter(
     (ip) => !ip.startsWith("127.") && ip !== "0.0.0.0" && ip !== "255.255.255.255"
   );

@@ -8,23 +8,27 @@ import { RotateCw, ZoomIn, ZoomOut, Crosshair, MapPin, Loader } from "lucide-rea
 // Fallback: NASA Visible Earth
 // ──────────────────────────────────────────────────────────────────────────────
 const EARTH_TEXTURE_URLS = [
-  "https://unpkg.com/three@0.160.1/examples/textures/planets/earth_atmos_2048.jpg",
+  "/textures/earth_atmos_2048.jpg",
+  "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/earth_atmos_2048.jpg",
   "https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/textures/planets/earth_atmos_2048.jpg",
   "https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg",
 ];
 
 const EARTH_SPECULAR_URLS = [
-  "https://unpkg.com/three@0.160.1/examples/textures/planets/earth_specular_2048.jpg",
+  "/textures/earth_specular_2048.jpg",
+  "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/earth_specular_2048.jpg",
   "https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/textures/planets/earth_specular_2048.jpg",
 ];
 
 const EARTH_NORMAL_URLS = [
-  "https://unpkg.com/three@0.160.1/examples/textures/planets/earth_normal_2048.jpg",
+  "/textures/earth_normal_2048.jpg",
+  "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/earth_normal_2048.jpg",
   "https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/textures/planets/earth_normal_2048.jpg",
 ];
 
 const CLOUD_TEXTURE_URLS = [
-  "https://unpkg.com/three@0.160.1/examples/textures/planets/earth_clouds_1024.png",
+  "/textures/earth_clouds_1024.png",
+  "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/earth_clouds_1024.png",
   "https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/textures/planets/earth_clouds_1024.png",
 ];
 
